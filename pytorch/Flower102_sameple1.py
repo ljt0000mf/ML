@@ -21,9 +21,7 @@ train_dir = 'train/'
 valid_dir = 'valid/'
 test_dir = 'test/'
 
-train_txt = 'train.txt'
-valid_txt = 'val.txt'
-test_txt = 'test.txt'
+root = 'D:\\AI\\AI研习社\\102种鲜花分类\\54_data\\'
 
 # 进行图像预处理参数设置
 # device = torch.device("cuda:0")
@@ -55,10 +53,12 @@ class MyDataset(Dataset):
         for line in fh:
             line = line.strip('\n')
             if self.flag == 'train' or self.flag == 'val':
-                words = line.split(' ')
-                imgs.append((words[0], int(words[1])))  # 路径和标签添加到列表中
+                words = line.split(',')
+                imgpath = root + 'train\\' + words[0]
+                imgs.append((imgpath, int(words[1])))  # 路径和标签添加到列表中
             elif self.flag == 'test':
-                imgs.append(line)
+                imgpath = root + 'test\\' + line
+                imgs.append(imgpath)
             self.imgs = imgs
             self.transform = transform
             self.target_transform = target_transform
@@ -81,9 +81,9 @@ class MyDataset(Dataset):
         return len(self.imgs)  # 返回长度，index就会自动的指导读取多少
 
 
-trainObj = MyDataset(train_txt, train_transforms, 'train')
-valObj = MyDataset(valid_txt, test_valid_transforms, 'val')
-testObj = MyDataset(test_txt, test_valid_transforms, 'test')
+trainObj = MyDataset(root + 'train.csv', train_transforms, 'train')
+valObj = MyDataset(root + 'val.csv', test_valid_transforms, 'val')
+testObj = MyDataset(root + 'test.csv', test_valid_transforms, 'test')
 
 # 加载图像
 trainloader = torch.utils.data.DataLoader(trainObj, batch_size=3, shuffle=True)
