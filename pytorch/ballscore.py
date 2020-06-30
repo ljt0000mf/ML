@@ -9,11 +9,11 @@ from sklearn.model_selection import GridSearchCV
 ## load data
 root = 'D:\\AI\\ball\\'
 # train_data = pd.read_table(root+'train3.txt') 2 value
-train_data = pd.read_table(root+'3train20200531_noall.txt')  # 3 value
+train_data = pd.read_table(root+'train_score0531.txt')  # 3 value
 #val_data = pd.read_csv(root+'val.csv')
-predict_data = pd.read_table(root+'predict0624.txt')  # predict0619
+predict_data = pd.read_table(root+'test_score0601-0629.txt')  # predict0619
 
-test_data = pd.read_table(root+'test0601-0629.txt')
+test_data = pd.read_table(root+'test_score0601-0629.txt')
 
 trainlabel = np.array(train_data.label)
 traindata = np.array(train_data.drop("label", axis=1))
@@ -29,12 +29,9 @@ testdata = np.array(test_data.drop("label", axis=1))
 # print(traindata.shape)
 # print(trainlabel.shape)
 
-x_train,x_val,y_train,y_val = train_test_split(traindata,trainlabel, test_size=0.1,shuffle=True)
-lgb_train = lgb.Dataset(x_train, y_train)
-lgb_val = lgb.Dataset(x_val, y_val, reference=lgb_train)
-
-folds = KFold(n_splits=5, shuffle=True, random_state=2020)
-prob_oof = np.zeros((traindata.shape[0], 3))
+#x_train,x_val,y_train,y_val = train_test_split(traindata,trainlabel, test_size=0.1,shuffle=True)
+lgb_train = lgb.Dataset(traindata, trainlabel)
+#lgb_val = lgb.Dataset(x_val, y_val, reference=lgb_train)
 
 
 def get_accuracy(y_preds, testlabel):
@@ -70,7 +67,7 @@ params = {
 }
 """
 params = {
-    'boosting_type': 'dart',  #  dart goss  gbdt
+    'boosting_type': 'gbdt',  #  dart goss  gbdt
     'objective': 'multiclass',  #  multiclass    multiclassova
     #'max_depth': 12, # 9   11
     'num_leaves': 777, # 450  777
@@ -78,7 +75,7 @@ params = {
     'metric': {'multi_logloss'},
     #'metric': {'multi_logloss', 'multi_error'},
     'learning_rate': 0.005,
-    'num_class': 3,
+    'num_class': 6,
     "random_state": 2020,
     "nthread": 6,
     #"lambda_l1": 0.1,
@@ -117,11 +114,11 @@ def train():
     get_accuracy(y_preds, testlabel)
 
 
-    gbm.save_model(root+'model_dart_'+str(acc)+'.txt')
+    gbm.save_model(root+'model_gbdt_score_'+str(acc)+'.txt')
 
 
 def predict():
-    model_file = root + 'usemodel\\model_goss_noall_0.889.txt'    #   model_goss_0.889
+    model_file = root + 'usemodel\\model_gbdt_score_1.0.txt'    #   model_goss_0.889
     gbm = lgb.Booster(model_file=model_file)
 
     print('开始预测...')
@@ -137,8 +134,7 @@ def predict():
 
 
 def test():
-    # model_goss_noall_0.889: 0.658 , model_gbdt_0.947:0.672   ,model_goss_0.93: 0.669,  model_dart_0.921:0.67
-    model_file = root + 'usemodel\\model_goss_noall_0.889.txt'
+    model_file = root + 'usemodel\\model_gbdt_score_1.0.txt'  # model_goss_noall_0.889
     gbm = lgb.Booster(model_file=model_file)
 
     print('开始预测...')
@@ -147,7 +143,7 @@ def test():
 
     get_accuracy(y_preds, testlabel)
 
-    #print(y_preds)
+    print(y_preds)
 
 def main():
     #train()
