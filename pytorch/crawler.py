@@ -11,6 +11,8 @@ Headers = {
     'User-Agent': "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; AcooBrowser; .NET CLR 1.1.4322; .NET CLR 2.0.50727)"}
 CUP = '杯'
 JB = '锦标'
+black_list = ['球会友谊', '英足总', '英社盾', '英锦赛', '韩足总', '澳足总']
+league_5list = ['意甲', '法甲', '英超', '德甲', '西甲']
 END = '完场'
 
 
@@ -258,7 +260,7 @@ def get_result(fyear, fmonth, fday, tyear, tmonth, tday):
             seq = tr.contents[1].text
             league_title = tr.contents[3].text
             # print(seq, league_title)
-            if CUP in league_title or JB in league_title:
+            if CUP in league_title or JB in league_title or league_title in black_list:
                 continue  # filter cup match and 锦标赛
 
             status = tr.contents[7].text
@@ -307,7 +309,7 @@ def get_match_to_predict(year, month, day):
             seq = tr.contents[1].text
             league_title = tr.contents[3].text
             # print(seq, league_title)
-            if CUP in league_title or JB in league_title:
+            if CUP in league_title or JB in league_title or league_title in black_list:
                 continue  # filter cup match and 锦标赛
 
             home_team = tr.contents[9].text.replace('\n', '')
@@ -321,9 +323,9 @@ def get_match_to_predict(year, month, day):
             # match_day = day.replace('-', '')
             match_day = str(tr.contents[7])[16:26].replace('-', '')
 
-            home_all_rate = round(float(matchResult.home_all_total_score) / float(matchResult.home_all_total_match), 2)
-            home_all_total_get_goal_rate = round(float(matchResult.home_all_total_get_goal) / float(matchResult.home_all_total_match), 2)
-            home_all_total_loss_goal_rate = round(float(matchResult.home_all_total_loss_goal) / float(matchResult.home_all_total_match), 2)
+            #home_all_rate = round(float(matchResult.home_all_total_score) / float(matchResult.home_all_total_match), 2)
+            #home_all_total_get_goal_rate = round(float(matchResult.home_all_total_get_goal) / float(matchResult.home_all_total_match), 2)
+            #home_all_total_loss_goal_rate = round(float(matchResult.home_all_total_loss_goal) / float(matchResult.home_all_total_match), 2)
 
             home_rate = round(float(matchResult.home_total_score) / float(matchResult.home_total_match), 2)
             home_total_get_goal_rate = round(float(matchResult.home_total_get_goal) / float(matchResult.home_total_match), 2)
@@ -333,9 +335,9 @@ def get_match_to_predict(year, month, day):
             home_six_get_goal_rate = round(float(matchResult.home_six_get_goal) / float(matchResult.home_six_match), 2)
             home_six_loss_goal_rate = round(float(matchResult.home_six_loss_goal) / float(matchResult.home_six_match), 2)
 
-            guest_all_rate = round(float(matchResult.guest_all_total_score) / float(matchResult.guest_all_total_match),2)
-            guest_all_total_get_goal_rate = round(float(matchResult.guest_all_total_get_goal) / float(matchResult.guest_all_total_match),2)
-            guest_all_total_loss_goal_rate = round(float(matchResult.guest_all_total_loss_goal) / float(matchResult.guest_all_total_match),2)
+            #guest_all_rate = round(float(matchResult.guest_all_total_score) / float(matchResult.guest_all_total_match),2)
+            #guest_all_total_get_goal_rate = round(float(matchResult.guest_all_total_get_goal) / float(matchResult.guest_all_total_match),2)
+            #guest_all_total_loss_goal_rate = round(float(matchResult.guest_all_total_loss_goal) / float(matchResult.guest_all_total_match),2)
 
             guest_rate = round(float(matchResult.guest_total_score) / float(matchResult.guest_total_match), 2)
             guest_total_get_goal_rate = round(float(matchResult.guest_total_get_goal) / float(matchResult.guest_total_match), 2)
@@ -346,10 +348,10 @@ def get_match_to_predict(year, month, day):
             guest_six_loss_goal_rate = round(float(matchResult.guest_six_loss_goal) / float(matchResult.guest_six_match),2)
 
             match = [match_day, seq, league_title, home_team, guest_team,
-                     home_all_rate, home_all_total_get_goal_rate, home_all_total_loss_goal_rate,
+                     #home_all_rate, home_all_total_get_goal_rate, home_all_total_loss_goal_rate,
                      home_rate, home_total_get_goal_rate, home_total_loss_goal_rate,
                      home_six_rate, home_six_get_goal_rate, home_six_loss_goal_rate,
-                     guest_all_rate, guest_all_total_get_goal_rate, guest_all_total_loss_goal_rate,
+                     # guest_all_rate, guest_all_total_get_goal_rate, guest_all_total_loss_goal_rate,
                      guest_rate, guest_total_get_goal_rate, guest_total_loss_goal_rate,
                      guest_six_rate, guest_six_get_goal_rate, guest_six_loss_goal_rate]
 
@@ -357,10 +359,10 @@ def get_match_to_predict(year, month, day):
 
     # print(matchResultList)
     columns = ["match_day", "seq", "league_title", "home_team", "guest_team",
-               "home_all_rate", "home_all_total_get_goal_rate", "home_all_total_loss_goal_rate",
+               #"home_all_rate", "home_all_total_get_goal_rate", "home_all_total_loss_goal_rate",
                "home_rate", "home_total_get_goal_rate", "home_total_loss_goal_rate",
                "home_six_rate", "home_six_get_goal_rate", "home_six_loss_goal_rate",
-               "guest_all_rate", "guest_all_total_get_goal_rate", "guest_all_total_loss_goal_rate",
+               # "guest_all_rate", "guest_all_total_get_goal_rate", "guest_all_total_loss_goal_rate",
                "guest_rate", "guest_total_get_goal_rate", "guest_total_loss_goal_rate",
                "guest_six_rate", "guest_six_get_goal_rate", "guest_six_loss_goal_rate"
                ]
@@ -372,10 +374,198 @@ def get_match_to_predict(year, month, day):
 
     print('end')
 
+# 增加比分的获取
+def get_match_to_val(fyear, fmonth, fday, tyear, tmonth, tday):
+    begin = datetime.date(fyear, fmonth, fday)
+    end = datetime.date(tyear, tmonth, tday)
+    matchResultList = []
+    for i in range((end - begin).days + 1):
+        day = begin + datetime.timedelta(days=i)
+        day = str(day)
+        url = base_url + 'buy/jingcai.aspx?typeID=105&oddstype=2&date=' + day
+        strhtml = requests.get(url, headers=Headers)
+        strhtml.encoding = 'utf-8'
+        soup = BeautifulSoup(strhtml.text, 'lxml')
+
+        for tr in soup.find_all(has_attr_cansale):
+            seq = tr.contents[1].text
+            league_title = tr.contents[3].text
+            #print(seq, league_title)
+            if CUP in league_title or JB in league_title or league_title in black_list:
+                continue  # filter cup match and 锦标赛
+
+            status = tr.contents[7].text
+            if status != END:
+                continue  # filter cancel or delay match
+
+            score = tr.contents[13].text
+            result = getresult(score)
+
+            home_team = tr.contents[9].text.replace('\n', '')
+            guest_team = tr.contents[15].text.replace('\n', '')
+            analysis_url = base_url + tr.contents[21].contents[2]['href']
+
+            score_tr = tr.contents[23].contents[0].contents[0]
+            #print(score_tr)
+            #print(len(score_tr.contents))
+            win = 1.0
+            draw = 1.0
+            loss = 1.0
+            if len(score_tr.contents) > 2:    # <1 是未开售胜平负玩法
+                win = score_tr.contents[1].contents[0].text
+                draw = score_tr.contents[2].contents[0].text
+                loss = score_tr.contents[3].contents[0].text
+
+            matchResult = getdetail(analysis_url)
+            if matchResult is None:
+                continue  # may be less six match or zero match
+
+            # match_day = day.replace('-', '')
+            match_day = str(tr.contents[7])[16:26].replace('-', '')
+
+            #home_all_rate = round(float(matchResult.home_all_total_score) / float(matchResult.home_all_total_match), 2)
+            #home_all_total_get_goal_rate = round(float(matchResult.home_all_total_get_goal) / float(matchResult.home_all_total_match), 2)
+            #home_all_total_loss_goal_rate = round(float(matchResult.home_all_total_loss_goal) / float(matchResult.home_all_total_match), 2)
+
+            home_rate = round(float(matchResult.home_total_score) / float(matchResult.home_total_match), 2)
+            home_total_get_goal_rate = round(float(matchResult.home_total_get_goal) / float(matchResult.home_total_match), 2)
+            home_total_loss_goal_rate = round(float(matchResult.home_total_loss_goal) / float(matchResult.home_total_match), 2)
+
+            home_six_rate = round(float(matchResult.home_six_score) / float(matchResult.home_six_match), 2)
+            home_six_get_goal_rate = round(float(matchResult.home_six_get_goal) / float(matchResult.home_six_match), 2)
+            home_six_loss_goal_rate = round(float(matchResult.home_six_loss_goal) / float(matchResult.home_six_match), 2)
+
+            #guest_all_rate = round(float(matchResult.guest_all_total_score) / float(matchResult.guest_all_total_match),2)
+            #guest_all_total_get_goal_rate = round(float(matchResult.guest_all_total_get_goal) / float(matchResult.guest_all_total_match),2)
+            #guest_all_total_loss_goal_rate = round(float(matchResult.guest_all_total_loss_goal) / float(matchResult.guest_all_total_match),2)
+
+            guest_rate = round(float(matchResult.guest_total_score) / float(matchResult.guest_total_match), 2)
+            guest_total_get_goal_rate = round(float(matchResult.guest_total_get_goal) / float(matchResult.guest_total_match), 2)
+            guest_total_loss_goal_rate = round(float(matchResult.guest_total_loss_goal) / float(matchResult.guest_total_match), 2)
+
+            guest_six_rate = round(float(matchResult.guest_six_score) / float(matchResult.guest_six_match), 2)
+            guest_six_get_goal_rate = round(float(matchResult.guest_six_get_goal) / float(matchResult.guest_six_match), 2)
+            guest_six_loss_goal_rate = round(float(matchResult.guest_six_loss_goal) / float(matchResult.guest_six_match),2)
+
+            match = [match_day, seq, league_title, home_team, guest_team,
+                     result, win, draw, loss,
+                     #home_all_rate, home_all_total_get_goal_rate, home_all_total_loss_goal_rate,
+                     home_rate, home_total_get_goal_rate, home_total_loss_goal_rate,
+                     home_six_rate, home_six_get_goal_rate, home_six_loss_goal_rate,
+                     # guest_all_rate, guest_all_total_get_goal_rate, guest_all_total_loss_goal_rate,
+                     guest_rate, guest_total_get_goal_rate, guest_total_loss_goal_rate,
+                     guest_six_rate, guest_six_get_goal_rate, guest_six_loss_goal_rate]
+
+            matchResultList.append(match)
+
+    # print(matchResultList)
+    columns = ["match_day", "seq", "league_title", "home_team", "guest_team",
+               "result", "win", "draw", "loss",
+               #"home_all_rate", "home_all_total_get_goal_rate", "home_all_total_loss_goal_rate",
+               "home_rate", "home_total_get_goal_rate", "home_total_loss_goal_rate",
+               "home_six_rate", "home_six_get_goal_rate", "home_six_loss_goal_rate",
+               # "guest_all_rate", "guest_all_total_get_goal_rate", "guest_all_total_loss_goal_rate",
+               "guest_rate", "guest_total_get_goal_rate", "guest_total_loss_goal_rate",
+               "guest_six_rate", "guest_six_get_goal_rate", "guest_six_loss_goal_rate"
+               ]
+
+    dt = pd.DataFrame(matchResultList, columns=columns)
+    root = 'D:\\AI\\ball\\'
+    #filename = "val" + day + ".csv"
+    # dt.to_csv(root + filename, encoding='utf_8_sig')
+    filename = "val" + day + ".xlsx"
+    dt.to_excel(root + filename, encoding='utf_8_sig')
+
+    print('get_match_to_val end')
+
+
+#没有五大联赛
+def get_match_to_predict_no_5league(year, month, day):
+    begin = datetime.date(year, month, day)
+    end = datetime.date(year, month, day)
+    matchResultList = []
+    for i in range((end - begin).days + 1):
+        day = begin + datetime.timedelta(days=i)
+        day = str(day)
+        url = base_url + 'buy/jingcai.aspx?typeID=105&oddstype=2&date=' + day
+        strhtml = requests.get(url, headers=Headers)
+        strhtml.encoding = 'utf-8'
+        soup = BeautifulSoup(strhtml.text, 'lxml')
+
+        for tr in soup.find_all(has_attr_cansale):
+            seq = tr.contents[1].text
+            league_title = tr.contents[3].text
+            # print(seq, league_title)
+            if CUP in league_title or JB in league_title or league_title in black_list or league_title in league_5list:
+                continue  # filter cup match and 锦标赛
+
+            home_team = tr.contents[9].text.replace('\n', '')
+            guest_team = tr.contents[15].text.replace('\n', '')
+            analysis_url = base_url + tr.contents[21].contents[2]['href']
+
+            matchResult = getdetail(analysis_url)
+            if matchResult is None:
+                continue  # may be less six match or zero match
+
+            # match_day = day.replace('-', '')
+            match_day = str(tr.contents[7])[16:26].replace('-', '')
+
+            #home_all_rate = round(float(matchResult.home_all_total_score) / float(matchResult.home_all_total_match), 2)
+            #home_all_total_get_goal_rate = round(float(matchResult.home_all_total_get_goal) / float(matchResult.home_all_total_match), 2)
+            #home_all_total_loss_goal_rate = round(float(matchResult.home_all_total_loss_goal) / float(matchResult.home_all_total_match), 2)
+
+            home_rate = round(float(matchResult.home_total_score) / float(matchResult.home_total_match), 2)
+            home_total_get_goal_rate = round(float(matchResult.home_total_get_goal) / float(matchResult.home_total_match), 2)
+            home_total_loss_goal_rate = round(float(matchResult.home_total_loss_goal) / float(matchResult.home_total_match), 2)
+
+            home_six_rate = round(float(matchResult.home_six_score) / float(matchResult.home_six_match), 2)
+            home_six_get_goal_rate = round(float(matchResult.home_six_get_goal) / float(matchResult.home_six_match), 2)
+            home_six_loss_goal_rate = round(float(matchResult.home_six_loss_goal) / float(matchResult.home_six_match), 2)
+
+            #guest_all_rate = round(float(matchResult.guest_all_total_score) / float(matchResult.guest_all_total_match),2)
+            #guest_all_total_get_goal_rate = round(float(matchResult.guest_all_total_get_goal) / float(matchResult.guest_all_total_match),2)
+            #guest_all_total_loss_goal_rate = round(float(matchResult.guest_all_total_loss_goal) / float(matchResult.guest_all_total_match),2)
+
+            guest_rate = round(float(matchResult.guest_total_score) / float(matchResult.guest_total_match), 2)
+            guest_total_get_goal_rate = round(float(matchResult.guest_total_get_goal) / float(matchResult.guest_total_match), 2)
+            guest_total_loss_goal_rate = round(float(matchResult.guest_total_loss_goal) / float(matchResult.guest_total_match), 2)
+
+            guest_six_rate = round(float(matchResult.guest_six_score) / float(matchResult.guest_six_match), 2)
+            guest_six_get_goal_rate = round(float(matchResult.guest_six_get_goal) / float(matchResult.guest_six_match), 2)
+            guest_six_loss_goal_rate = round(float(matchResult.guest_six_loss_goal) / float(matchResult.guest_six_match),2)
+
+            match = [match_day, seq, league_title, home_team, guest_team,
+                     #home_all_rate, home_all_total_get_goal_rate, home_all_total_loss_goal_rate,
+                     home_rate, home_total_get_goal_rate, home_total_loss_goal_rate,
+                     home_six_rate, home_six_get_goal_rate, home_six_loss_goal_rate,
+                     # guest_all_rate, guest_all_total_get_goal_rate, guest_all_total_loss_goal_rate,
+                     guest_rate, guest_total_get_goal_rate, guest_total_loss_goal_rate,
+                     guest_six_rate, guest_six_get_goal_rate, guest_six_loss_goal_rate]
+
+            matchResultList.append(match)
+
+    # print(matchResultList)
+    columns = ["match_day", "seq", "league_title", "home_team", "guest_team",
+               #"home_all_rate", "home_all_total_get_goal_rate", "home_all_total_loss_goal_rate",
+               "home_rate", "home_total_get_goal_rate", "home_total_loss_goal_rate",
+               "home_six_rate", "home_six_get_goal_rate", "home_six_loss_goal_rate",
+               # "guest_all_rate", "guest_all_total_get_goal_rate", "guest_all_total_loss_goal_rate",
+               "guest_rate", "guest_total_get_goal_rate", "guest_total_loss_goal_rate",
+               "guest_six_rate", "guest_six_get_goal_rate", "guest_six_loss_goal_rate"
+               ]
+
+    dt = pd.DataFrame(matchResultList, columns=columns)
+    root = 'D:\\AI\\ball\\'
+    filename = "predict_no5league_" + day + ".csv"
+    dt.to_csv(root + filename, encoding='utf_8_sig')
+
+    print('end')
 
 def main():
-    #get_result(2016, 9, 15, 2016, 12, 31)
-    get_match_to_predict(2020, 6, 23)
+    #get_result(2015, 4, 26, 2015, 12, 31)
+    #get_match_to_predict(2020, 6, 30)
+    #get_match_to_val(2020, 6, 1, 2020, 7, 9)
+    get_match_to_predict_no_5league(2020, 6, 30)
 
 
 if __name__ == '__main__':
