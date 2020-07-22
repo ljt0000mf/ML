@@ -9,6 +9,8 @@ import random
 
 base_url = 'http://www.310win.com/'
 zcw_url = 'http://live.zgzcw.com/qb/'
+Forbidden = '403 Forbidden'
+
 Headers = {
     'User-Agent': "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; AcooBrowser; .NET CLR 1.1.4322; .NET CLR 2.0.50727)"}
 """
@@ -48,15 +50,19 @@ def test_http(ip_host):
     # 测试http代理是否有效
 
     try:
-        url = 'https://www.baidu.com'
-        proxies = {'http': ip_host}
+        #url = 'https://www.baidu.com'
+        url = 'http://fenxi.zgzcw.com/2098464/bfyc'
+        proxies = {'https': ip_host}
         html = requests.get(url, headers=headers, proxies=proxies, timeout=5).text
 
-        if html:
+        if Forbidden not in html:
             print('HTTP @@代理有效(>_<): ', ip_host)
             return True
+        else:
+            print('403 Forbidden @@代理无效(X_X!)：', ip_host)
+            return False
     except:
-        print('HTTP @@代理无效(X_X!)：', ip_host)
+        print('发生异常 @@代理无效(X_X!)：', ip_host)
         return False
 
 
@@ -86,7 +92,7 @@ def get_ip_list():
 
 
 def get_random_ip(ip_list=None):
-    print("正在设置随机代理...")
+    #print("正在设置随机代理...")
     if not ip_list:
         ip_list = get_ip_list()
     proxy_list = []
@@ -94,7 +100,7 @@ def get_random_ip(ip_list=None):
         proxy_list.append('https://' + ip)
     proxy_ip = random.choice(proxy_list)
     proxies = {'https': proxy_ip}
-    print("代理设置成功.")
+    #print("代理设置成功.")
     return proxies
 
 
@@ -204,6 +210,7 @@ def conn():
 
 
 def getdetail_zcw(url):
+    time.sleep(1)
     strhtml = requests.get(url, proxies=get_random_ip(ip_list), headers=headers)
     strhtml.encoding = 'utf-8'
     soup = BeautifulSoup(strhtml.text, 'lxml')
@@ -490,7 +497,7 @@ def get_zcw_result(fyear, fmonth, fday, tyear, tmonth, tday):
         day = str(day)
         url = 'http://live.zgzcw.com/qb/?date=' + day
 
-        strhtml = requests.get(url, headers=headers)
+        strhtml = requests.get(url, proxies=get_random_ip(ip_list), headers=headers)
         strhtml.encoding = 'utf-8'
         soup = BeautifulSoup(strhtml.text, 'lxml')
 
@@ -549,7 +556,105 @@ def get_zcw_result(fyear, fmonth, fday, tyear, tmonth, tday):
         saveto_db_jcw(matchResultList)
         print(day, 'jcw_end')
         print(datetime.datetime.now())
-        time.sleep(63)
+
+
+def get_zcw_predict(fyear, fmonth, fday):
+    begin = datetime.date(fyear, fmonth, fday)
+    end = datetime.date(fyear, fmonth, fday)
+    for i in range((end - begin).days + 1):
+        day = begin + datetime.timedelta(days=i)
+        day = str(day)
+        url = 'http://live.zgzcw.com/qb/?date=' + day
+
+        strhtml = requests.get(url, proxies=get_random_ip(ip_list), headers=headers)
+        strhtml.encoding = 'utf-8'
+        soup = BeautifulSoup(strhtml.text, 'lxml')
+
+        matchResultList = []
+        for tr in soup.find_all(has_attr_matchid):
+            match_day = tr.contents[7]['date'][0:11]
+            if match_day.strip() != day.strip():
+                break  # 只取指定日期的
+
+            seq = tr.contents[5].text
+            league_title = tr.contents[3].text
+            # print(seq, league_title)
+            if CUP in league_title or JB in league_title or league_title in black_list or ZZ in league_title:
+                continue  # filter cup match and 锦标赛 足总杯
+
+            score = tr.contents[13].text
+            result = getresult(score)
+
+            win = 1.0
+            draw = 1.0
+            loss = 1.0
+            score_tr = tr.contents[19].contents[1]
+            # .contents[1].text
+            if len(score_tr.contents) > 2:  # <1 是没有数据
+                win = score_tr.contents[1].text
+                draw = score_tr.contents[3].text
+                loss = score_tr.contents[5].text
+
+            home_team = tr.contents[11].contents[1].contents[7].text.replace('\n', '')
+            guest_team = tr.contents[15].contents[1].contents[1].text.replace('\n', '')
+            analysis_url = tr.contents[23].contents[4]['href']
+
+            matchResult = getdetail_zcw(analysis_url)
+            if matchResult is None:
+                continue  # may be less six match or zero match
+
+            matchResult.seq = seq
+            matchResult.league_title = league_title
+            matchResult.home_team = home_team
+            matchResult.guest_team = guest_team
+            matchResult.score = score
+            matchResult.result = result
+            matchResult.match_day = day.replace('-', '')
+
+            home_all_rate = round(float(matchResult.home_all_total_score) / float(matchResult.home_all_total_match), 2)
+            home_all_total_get_goal_rate = round(float(matchResult.home_all_total_get_goal) / float(matchResult.home_all_total_match), 2)
+            home_all_total_loss_goal_rate = round(float(matchResult.home_all_total_loss_goal) / float(matchResult.home_all_total_match), 2)
+
+            home_rate = round(float(matchResult.home_total_score) / float(matchResult.home_total_match), 2)
+            home_total_get_goal_rate = round(
+                float(matchResult.home_total_get_goal) / float(matchResult.home_total_match), 2)
+            home_total_loss_goal_rate = round(
+                float(matchResult.home_total_loss_goal) / float(matchResult.home_total_match), 2)
+
+            guest_all_rate = round(float(matchResult.guest_all_total_score) / float(matchResult.guest_all_total_match),2)
+            guest_all_total_get_goal_rate = round(float(matchResult.guest_all_total_get_goal) / float(matchResult.guest_all_total_match),2)
+            guest_all_total_loss_goal_rate = round(float(matchResult.guest_all_total_loss_goal) / float(matchResult.guest_all_total_match),2)
+
+            guest_rate = round(float(matchResult.guest_total_score) / float(matchResult.guest_total_match), 2)
+            guest_total_get_goal_rate = round(
+                float(matchResult.guest_total_get_goal) / float(matchResult.guest_total_match), 2)
+            guest_total_loss_goal_rate = round(
+                float(matchResult.guest_total_loss_goal) / float(matchResult.guest_total_match), 2)
+
+            match = [match_day, seq, league_title, home_team, guest_team,
+                     home_all_rate, home_all_total_get_goal_rate, home_all_total_loss_goal_rate,
+                     home_rate, home_total_get_goal_rate, home_total_loss_goal_rate,
+                     guest_all_rate, guest_all_total_get_goal_rate, guest_all_total_loss_goal_rate,
+                     guest_rate, guest_total_get_goal_rate, guest_total_loss_goal_rate]
+
+            matchResultList.append(match)
+
+            # print(matchResultList)
+        columns = ["match_day", "seq", "league_title", "home_team", "guest_team",
+                   "home_all_rate", "home_all_total_get_goal_rate", "home_all_total_loss_goal_rate",
+                   "home_rate", "home_total_get_goal_rate", "home_total_loss_goal_rate",
+                   "guest_all_rate", "guest_all_total_get_goal_rate", "guest_all_total_loss_goal_rate",
+                   "guest_rate", "guest_total_get_goal_rate", "guest_total_loss_goal_rate"]
+
+        dt = pd.DataFrame(matchResultList, columns=columns)
+        root = 'D:\\AI\\ball\\'
+        #filename = "predict" + day + ".csv"
+        #dt.to_csv(root + filename, encoding='utf_8_sig')
+        filename = "predict_zcw" + day + ".xlsx"
+        dt.to_excel(root + filename, encoding='utf_8_sig')
+
+        print('zcw_end')
+
 
 
 def get_result(fyear, fmonth, fday, tyear, tmonth, tday):
@@ -890,15 +995,16 @@ def get_match_to_predict_no_5league(year, month, day):
 
     print('end')
 
+global ip_list
+ip_list = get_ip_list()
 
 def main():
-    global ip_list
-    ip_list = get_ip_list()
-    # get_result(2015, 4, 26, 2015, 12, 31)
+    # get_result(2020, 7, 9, 2020, 7, 21)
     # get_match_to_predict(2020, 6, 30)
     # get_match_to_val(2020, 6, 1, 2020, 7, 9)
     # get_match_to_predict_no_5league(2020, 6, 30)
-    get_zcw_result(2019, 4, 8, 2019, 4, 8)  # 2019, 4, 8, 2019, 12, 31
+    # get_zcw_result(2016, 6, 1, 2016, 6, 1)  # 2017, 12, 10, 2017, 12, 31
+    get_zcw_predict(2020, 7, 22)
 
 
 if __name__ == '__main__':
