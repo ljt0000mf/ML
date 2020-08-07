@@ -50,9 +50,9 @@ def test_http(ip_host):
     # 测试http代理是否有效
 
     try:
-        #url = 'https://www.baidu.com'
-        url = 'http://fenxi.zgzcw.com/2098464/bfyc'
-        proxies = {'https': ip_host}
+        url = 'https://www.baidu.com'
+        # url = 'http://fenxi.zgzcw.com/2098464/bfyc'
+        proxies = {'http': ip_host}
         html = requests.get(url, headers=headers, proxies=proxies, timeout=5).text
 
         if Forbidden not in html:
@@ -68,17 +68,17 @@ def test_http(ip_host):
 
 def get_ip_list():
     print("正在获取代理列表...")
-    #url = 'http://www.66ip.cn/index.html'
-    #url = 'https://www.kuaidaili.com/free/'
-    url = 'http://www.66ip.cn/'  #1.html
+    # url = 'http://www.66ip.cn/index.html'
+    # url = 'https://www.kuaidaili.com/free/'
+    url = 'http://www.66ip.cn/'  # 1.html
     headers = {
         "User-agent": random.choice(USER_AGENTS)
     }
     ip_list = []
     for tmp in range(1, 50):
-        tmpurl = url+str(tmp)+'.html'
-        #print(tmpurl)
-        html = requests.get(tmpurl,headers=headers).text
+        tmpurl = url + str(tmp) + '.html'
+        # print(tmpurl)
+        html = requests.get(tmpurl, headers=headers).text
         soup = BeautifulSoup(html, 'lxml')
         ips = soup.find(id='main').find_all('tr')
         for i in range(1, len(ips)):
@@ -92,7 +92,7 @@ def get_ip_list():
 
 
 def get_random_ip(ip_list=None):
-    #print("正在设置随机代理...")
+    # print("正在设置随机代理...")
     if not ip_list:
         ip_list = get_ip_list()
     proxy_list = []
@@ -100,7 +100,7 @@ def get_random_ip(ip_list=None):
         proxy_list.append('https://' + ip)
     proxy_ip = random.choice(proxy_list)
     proxies = {'https': proxy_ip}
-    #print("代理设置成功.")
+    # print("代理设置成功.")
     return proxies
 
 
@@ -210,20 +210,27 @@ def conn():
 
 
 def getdetail_zcw(url):
-    time.sleep(1)
+    global ip_list
     strhtml = requests.get(url, proxies=get_random_ip(ip_list), headers=headers)
+    # strhtml = requests.get(url, headers=headers)
     strhtml.encoding = 'utf-8'
+    time.sleep(15)
     soup = BeautifulSoup(strhtml.text, 'lxml')
+
+    if Forbidden in soup:
+        ex = Exception('403 Forbidden')
+        raise ex
+
     div = soup.find_all("div", class_='only-team')
     if len(div) == 0:
-        return None
+        return None  # no only-team
 
     all_home_div = div[0].contents[3].contents[1]
     all_total_match = all_home_div.contents[3].contents[3].contents[1].text
 
     matchResult = MatchResult()
     # if home_trs[0].contents[3].text == '' or int(home_trs[0].contents[3].text) < 6:
-    if all_total_match == '\xa0' or int(all_total_match) < 6:
+    if all_total_match == '\xa0' or all_total_match == '' or int(all_total_match) < 6:
         # print('home_trs', 'yes')
         return None  # home less six match will be ignore or no data
 
@@ -247,17 +254,13 @@ def getdetail_zcw(url):
     matchResult.home_total_loss_goal = home_div.contents[3].contents[3].contents[11].text
     matchResult.home_total_score = home_div.contents[3].contents[3].contents[15].text
 
-    # matchResult.home_six_match = home_div[3].contents[3].text
-    # matchResult.home_six_win = home_div[3].contents[5].text
-    # matchResult.home_six_draw = home_div[3].contents[7].text
-    # matchResult.home_six_loss = home_div[3].contents[9].text
-    # matchResult.home_six_get_goal = home_div[3].contents[11].text
-    # matchResult.home_six_loss_goal = home_div[3].contents[13].text
-    # matchResult.home_six_score = home_div[3].contents[15].text
+    all_guest = len(div[0].contents[5])
+    if all_guest < 2:
+        return None  # no guest data
 
     all_guest_div = div[0].contents[5].contents[1]
     guest_all_total_match = all_guest_div.contents[3].contents[3].contents[1].text
-    if guest_all_total_match == '\xa0' or int(guest_all_total_match) < 6:
+    if guest_all_total_match == '\xa0' or guest_all_total_match == '' or int(guest_all_total_match) < 6:
         # print('home_trs', 'yes')
         return None  # guest less six match will be ignore or no data
     matchResult.guest_all_total_match = all_guest_div.contents[3].contents[3].contents[1].text
@@ -280,16 +283,6 @@ def getdetail_zcw(url):
     matchResult.guest_total_get_goal = guest_div.contents[3].contents[3].contents[9].text
     matchResult.guest_total_loss_goal = guest_div.contents[3].contents[3].contents[11].text
     matchResult.guest_total_score = guest_div.contents[3].contents[3].contents[15].text
-
-    # matchResult.guest_six_match = guest_trs[3].contents[3].text
-    # matchResult.guest_six_win = guest_trs[3].contents[5].text
-    # matchResult.guest_six_draw = guest_trs[3].contents[7].text
-    # matchResult.guest_six_loss = guest_trs[3].contents[9].text
-    # matchResult.guest_six_get_goal = guest_trs[3].contents[11].text
-    # matchResult.guest_six_loss_goal = guest_trs[3].contents[13].text
-    # matchResult.guest_six_score = guest_trs[3].contents[15].text
-    # matchResult.guest_six_get_goal_rate = round(float(matchResult.guest_six_get_goal) / float(matchResult.guest_six_match),2)
-    # matchResult.guest_six_loss_goal_rate = round(float(matchResult.guest_six_loss_goal) / float(matchResult.guest_six_match), 2)
 
     return matchResult
 
@@ -489,7 +482,27 @@ def savetoDB(matchResultList):
     con.close()
 
 
+def check_exists(match_day, seq, home_team):
+    con = conn()
+    cursor = con.cursor()
+
+    exists = False
+
+    sql = 'select count(*) num from ball_all where match_day= %s and seq = %s and home_team = %s'
+    data = (match_day, seq, home_team)
+    cursor.execute(sql, data)
+    resList = cursor.fetchall()  # 获得所有的查询结果
+    num = resList[0][0]
+    con.close()
+
+    if num > 0:
+        exists = True
+
+    return exists
+
+
 def get_zcw_result(fyear, fmonth, fday, tyear, tmonth, tday):
+    global ip_list
     begin = datetime.date(fyear, fmonth, fday)
     end = datetime.date(tyear, tmonth, tday)
     for i in range((end - begin).days + 1):
@@ -498,6 +511,7 @@ def get_zcw_result(fyear, fmonth, fday, tyear, tmonth, tday):
         url = 'http://live.zgzcw.com/qb/?date=' + day
 
         strhtml = requests.get(url, proxies=get_random_ip(ip_list), headers=headers)
+        # strhtml = requests.get(url, headers=headers)
         strhtml.encoding = 'utf-8'
         soup = BeautifulSoup(strhtml.text, 'lxml')
 
@@ -530,9 +544,16 @@ def get_zcw_result(fyear, fmonth, fday, tyear, tmonth, tday):
                 draw = score_tr.contents[3].text
                 loss = score_tr.contents[5].text
 
-            home_team = tr.contents[11].contents[1].contents[7].text.replace('\n', '')
-            guest_team = tr.contents[15].contents[1].contents[1].text.replace('\n', '')
+            home_team = tr.contents[11].contents[1].contents[7].text.replace('\n', '').strip()
+            guest_team = tr.contents[15].contents[1].contents[1].text.replace('\n', '').strip()
             analysis_url = tr.contents[23].contents[4]['href']
+
+            """
+            if check_exists(day.replace('-', ''), seq, home_team):
+                print(day + home_team + guest_team, ":exists")
+                continue   # 已经存在记录
+            """
+            print(home_team, guest_team)
 
             matchResult = getdetail_zcw(analysis_url)
             if matchResult is None:
@@ -554,7 +575,7 @@ def get_zcw_result(fyear, fmonth, fday, tyear, tmonth, tday):
             matchResultList.append(matchResult)
 
         saveto_db_jcw(matchResultList)
-        print(day, 'jcw_end')
+        print(day, 'zcw_end')
         print(datetime.datetime.now())
 
 
@@ -567,14 +588,16 @@ def get_zcw_predict(fyear, fmonth, fday):
         url = 'http://live.zgzcw.com/qb/?date=' + day
 
         strhtml = requests.get(url, proxies=get_random_ip(ip_list), headers=headers)
+        # strhtml = requests.get(url,  headers=headers)
         strhtml.encoding = 'utf-8'
         soup = BeautifulSoup(strhtml.text, 'lxml')
 
         matchResultList = []
+        matchResultList2 = []
         for tr in soup.find_all(has_attr_matchid):
             match_day = tr.contents[7]['date'][0:11]
-            if match_day.strip() != day.strip():
-                break  # 只取指定日期的
+            # if match_day.strip() != day.strip():
+            #    break  # 只取指定日期的
 
             seq = tr.contents[5].text
             league_title = tr.contents[3].text
@@ -582,18 +605,9 @@ def get_zcw_predict(fyear, fmonth, fday):
             if CUP in league_title or JB in league_title or league_title in black_list or ZZ in league_title:
                 continue  # filter cup match and 锦标赛 足总杯
 
-            score = tr.contents[13].text
-            result = getresult(score)
-
-            win = 1.0
-            draw = 1.0
-            loss = 1.0
-            score_tr = tr.contents[19].contents[1]
-            # .contents[1].text
-            if len(score_tr.contents) > 2:  # <1 是没有数据
-                win = score_tr.contents[1].text
-                draw = score_tr.contents[3].text
-                loss = score_tr.contents[5].text
+            status = tr.contents[9].text
+            if status not in '未':
+                continue  # filter cancel or delay match
 
             home_team = tr.contents[11].contents[1].contents[7].text.replace('\n', '')
             guest_team = tr.contents[15].contents[1].contents[1].text.replace('\n', '')
@@ -603,17 +617,19 @@ def get_zcw_predict(fyear, fmonth, fday):
             if matchResult is None:
                 continue  # may be less six match or zero match
 
+            print(home_team, guest_team)
+
             matchResult.seq = seq
             matchResult.league_title = league_title
             matchResult.home_team = home_team
             matchResult.guest_team = guest_team
-            matchResult.score = score
-            matchResult.result = result
             matchResult.match_day = day.replace('-', '')
 
             home_all_rate = round(float(matchResult.home_all_total_score) / float(matchResult.home_all_total_match), 2)
-            home_all_total_get_goal_rate = round(float(matchResult.home_all_total_get_goal) / float(matchResult.home_all_total_match), 2)
-            home_all_total_loss_goal_rate = round(float(matchResult.home_all_total_loss_goal) / float(matchResult.home_all_total_match), 2)
+            home_all_total_get_goal_rate = round(
+                float(matchResult.home_all_total_get_goal) / float(matchResult.home_all_total_match), 2)
+            home_all_total_loss_goal_rate = round(
+                float(matchResult.home_all_total_loss_goal) / float(matchResult.home_all_total_match), 2)
 
             home_rate = round(float(matchResult.home_total_score) / float(matchResult.home_total_match), 2)
             home_total_get_goal_rate = round(
@@ -621,9 +637,12 @@ def get_zcw_predict(fyear, fmonth, fday):
             home_total_loss_goal_rate = round(
                 float(matchResult.home_total_loss_goal) / float(matchResult.home_total_match), 2)
 
-            guest_all_rate = round(float(matchResult.guest_all_total_score) / float(matchResult.guest_all_total_match),2)
-            guest_all_total_get_goal_rate = round(float(matchResult.guest_all_total_get_goal) / float(matchResult.guest_all_total_match),2)
-            guest_all_total_loss_goal_rate = round(float(matchResult.guest_all_total_loss_goal) / float(matchResult.guest_all_total_match),2)
+            guest_all_rate = round(float(matchResult.guest_all_total_score) / float(matchResult.guest_all_total_match),
+                                   2)
+            guest_all_total_get_goal_rate = round(
+                float(matchResult.guest_all_total_get_goal) / float(matchResult.guest_all_total_match), 2)
+            guest_all_total_loss_goal_rate = round(
+                float(matchResult.guest_all_total_loss_goal) / float(matchResult.guest_all_total_match), 2)
 
             guest_rate = round(float(matchResult.guest_total_score) / float(matchResult.guest_total_match), 2)
             guest_total_get_goal_rate = round(
@@ -637,7 +656,13 @@ def get_zcw_predict(fyear, fmonth, fday):
                      guest_all_rate, guest_all_total_get_goal_rate, guest_all_total_loss_goal_rate,
                      guest_rate, guest_total_get_goal_rate, guest_total_loss_goal_rate]
 
+            match2 = [home_all_rate, home_all_total_get_goal_rate, home_all_total_loss_goal_rate,
+                      home_rate, home_total_get_goal_rate, home_total_loss_goal_rate,
+                      guest_all_rate, guest_all_total_get_goal_rate, guest_all_total_loss_goal_rate,
+                      guest_rate, guest_total_get_goal_rate, guest_total_loss_goal_rate]
+
             matchResultList.append(match)
+            matchResultList2.append(match2)
 
             # print(matchResultList)
         columns = ["match_day", "seq", "league_title", "home_team", "guest_team",
@@ -646,15 +671,23 @@ def get_zcw_predict(fyear, fmonth, fday):
                    "guest_all_rate", "guest_all_total_get_goal_rate", "guest_all_total_loss_goal_rate",
                    "guest_rate", "guest_total_get_goal_rate", "guest_total_loss_goal_rate"]
 
+        columns2 = ["home_all_rate", "home_all_total_get_goal_rate", "home_all_total_loss_goal_rate",
+                    "home_rate", "home_total_get_goal_rate", "home_total_loss_goal_rate",
+                    "guest_all_rate", "guest_all_total_get_goal_rate", "guest_all_total_loss_goal_rate",
+                    "guest_rate", "guest_total_get_goal_rate", "guest_total_loss_goal_rate"]
+
         dt = pd.DataFrame(matchResultList, columns=columns)
-        root = 'D:\\AI\\ball\\'
-        #filename = "predict" + day + ".csv"
-        #dt.to_csv(root + filename, encoding='utf_8_sig')
+        root = 'D:\\AI\\ball_all\\'
+        # filename = "predict" + day + ".csv"
+        # dt.to_csv(root + filename, encoding='utf_8_sig')
         filename = "predict_zcw" + day + ".xlsx"
         dt.to_excel(root + filename, encoding='utf_8_sig')
 
-        print('zcw_end')
+        dt = pd.DataFrame(matchResultList2, columns=columns2)
+        filename = "predict_zcw" + day + ".txt"
+        dt.to_csv(root + filename, sep='\t', index=False, encoding='utf_8_sig')
 
+        print('zcw_end')
 
 
 def get_result(fyear, fmonth, fday, tyear, tmonth, tday):
@@ -709,6 +742,7 @@ def get_match_to_predict(year, month, day):
     begin = datetime.date(year, month, day)
     end = datetime.date(year, month, day)
     matchResultList = []
+    match_results_txt = []
     for i in range((end - begin).days + 1):
         day = begin + datetime.timedelta(days=i)
         day = str(day)
@@ -735,9 +769,11 @@ def get_match_to_predict(year, month, day):
             # match_day = day.replace('-', '')
             match_day = str(tr.contents[7])[16:26].replace('-', '')
 
-            # home_all_rate = round(float(matchResult.home_all_total_score) / float(matchResult.home_all_total_match), 2)
-            # home_all_total_get_goal_rate = round(float(matchResult.home_all_total_get_goal) / float(matchResult.home_all_total_match), 2)
-            # home_all_total_loss_goal_rate = round(float(matchResult.home_all_total_loss_goal) / float(matchResult.home_all_total_match), 2)
+            home_all_rate = round(float(matchResult.home_all_total_score) / float(matchResult.home_all_total_match), 2)
+            home_all_total_get_goal_rate = round(
+                float(matchResult.home_all_total_get_goal) / float(matchResult.home_all_total_match), 2)
+            home_all_total_loss_goal_rate = round(
+                float(matchResult.home_all_total_loss_goal) / float(matchResult.home_all_total_match), 2)
 
             home_rate = round(float(matchResult.home_total_score) / float(matchResult.home_total_match), 2)
             home_total_get_goal_rate = round(
@@ -750,9 +786,12 @@ def get_match_to_predict(year, month, day):
             home_six_loss_goal_rate = round(float(matchResult.home_six_loss_goal) / float(matchResult.home_six_match),
                                             2)
 
-            # guest_all_rate = round(float(matchResult.guest_all_total_score) / float(matchResult.guest_all_total_match),2)
-            # guest_all_total_get_goal_rate = round(float(matchResult.guest_all_total_get_goal) / float(matchResult.guest_all_total_match),2)
-            # guest_all_total_loss_goal_rate = round(float(matchResult.guest_all_total_loss_goal) / float(matchResult.guest_all_total_match),2)
+            guest_all_rate = round(float(matchResult.guest_all_total_score) / float(matchResult.guest_all_total_match),
+                                   2)
+            guest_all_total_get_goal_rate = round(
+                float(matchResult.guest_all_total_get_goal) / float(matchResult.guest_all_total_match), 2)
+            guest_all_total_loss_goal_rate = round(
+                float(matchResult.guest_all_total_loss_goal) / float(matchResult.guest_all_total_match), 2)
 
             guest_rate = round(float(matchResult.guest_total_score) / float(matchResult.guest_total_match), 2)
             guest_total_get_goal_rate = round(
@@ -767,30 +806,49 @@ def get_match_to_predict(year, month, day):
                 float(matchResult.guest_six_loss_goal) / float(matchResult.guest_six_match), 2)
 
             match = [match_day, seq, league_title, home_team, guest_team,
-                     # home_all_rate, home_all_total_get_goal_rate, home_all_total_loss_goal_rate,
+                     home_all_rate, home_all_total_get_goal_rate, home_all_total_loss_goal_rate,
                      home_rate, home_total_get_goal_rate, home_total_loss_goal_rate,
                      home_six_rate, home_six_get_goal_rate, home_six_loss_goal_rate,
-                     # guest_all_rate, guest_all_total_get_goal_rate, guest_all_total_loss_goal_rate,
+                     guest_all_rate, guest_all_total_get_goal_rate, guest_all_total_loss_goal_rate,
                      guest_rate, guest_total_get_goal_rate, guest_total_loss_goal_rate,
                      guest_six_rate, guest_six_get_goal_rate, guest_six_loss_goal_rate]
 
+            match_txt = [home_all_rate, home_all_total_get_goal_rate, home_all_total_loss_goal_rate,
+                         home_rate, home_total_get_goal_rate, home_total_loss_goal_rate,
+                         home_six_rate, home_six_get_goal_rate, home_six_loss_goal_rate,
+                         guest_all_rate, guest_all_total_get_goal_rate, guest_all_total_loss_goal_rate,
+                         guest_rate, guest_total_get_goal_rate, guest_total_loss_goal_rate,
+                         guest_six_rate, guest_six_get_goal_rate, guest_six_loss_goal_rate]
+
             matchResultList.append(match)
+            match_results_txt.append(match_txt)
 
     # print(matchResultList)
     columns = ["match_day", "seq", "league_title", "home_team", "guest_team",
-               # "home_all_rate", "home_all_total_get_goal_rate", "home_all_total_loss_goal_rate",
+               "home_all_rate", "home_all_total_get_goal_rate", "home_all_total_loss_goal_rate",
                "home_rate", "home_total_get_goal_rate", "home_total_loss_goal_rate",
                "home_six_rate", "home_six_get_goal_rate", "home_six_loss_goal_rate",
-               # "guest_all_rate", "guest_all_total_get_goal_rate", "guest_all_total_loss_goal_rate",
+               "guest_all_rate", "guest_all_total_get_goal_rate", "guest_all_total_loss_goal_rate",
                "guest_rate", "guest_total_get_goal_rate", "guest_total_loss_goal_rate",
                "guest_six_rate", "guest_six_get_goal_rate", "guest_six_loss_goal_rate"
                ]
 
+    columns_txt = ["home_all_rate", "home_all_total_get_goal_rate", "home_all_total_loss_goal_rate",
+                   "home_rate", "home_total_get_goal_rate", "home_total_loss_goal_rate",
+                   "home_six_rate", "home_six_get_goal_rate", "home_six_loss_goal_rate",
+                   "guest_all_rate", "guest_all_total_get_goal_rate", "guest_all_total_loss_goal_rate",
+                   "guest_rate", "guest_total_get_goal_rate", "guest_total_loss_goal_rate",
+                   "guest_six_rate", "guest_six_get_goal_rate", "guest_six_loss_goal_rate"
+                   ]
+
     dt = pd.DataFrame(matchResultList, columns=columns)
     root = 'D:\\AI\\ball\\'
-    filename = "predict" + day + ".csv"
-    dt.to_csv(root + filename, encoding='utf_8_sig')
+    filename = "predict" + day + ".xlsx"
+    dt.to_excel(root + filename, encoding='utf_8_sig')
 
+    dt = pd.DataFrame(match_results_txt, columns=columns_txt)
+    filename = "predict" + day + ".txt"
+    dt.to_csv(root + filename, sep='\t', index=False, encoding='utf_8_sig')
     print('end')
 
 
@@ -995,16 +1053,18 @@ def get_match_to_predict_no_5league(year, month, day):
 
     print('end')
 
-global ip_list
+
 ip_list = get_ip_list()
+
 
 def main():
     # get_result(2020, 7, 9, 2020, 7, 21)
-    # get_match_to_predict(2020, 6, 30)
+    # get_match_to_predict(2020, 8, 7)
     # get_match_to_val(2020, 6, 1, 2020, 7, 9)
     # get_match_to_predict_no_5league(2020, 6, 30)
-    # get_zcw_result(2016, 6, 1, 2016, 6, 1)  # 2017, 12, 10, 2017, 12, 31
-    get_zcw_predict(2020, 7, 22)
+    # get_zcw_result(2015, 4, 21, 2015, 12, 31)  # 2017, 12, 10, 2017, 12, 31
+    get_zcw_predict(2020, 8, 7)
+    # check_exists('20170422','T.I 决赛','伊图阿诺')
 
 
 if __name__ == '__main__':
