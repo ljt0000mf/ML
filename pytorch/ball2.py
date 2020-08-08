@@ -10,7 +10,7 @@ import time
 ## load data
 root = 'D:\\AI\\ball\\'
 # train_data = pd.read_table(root+'train3.txt') 2 value
-train_data = pd.read_table(root + '3train20200531_not_5league.txt')  # 3 value  3train20200531_noall.txt ，3train20200531_noall_5league
+train_data = pd.read_table(root + 'train.txt')  # 3 value  3train20200531_noall.txt ，3train20200531_noall_5league
 # val_data = pd.read_csv(root+'val.csv')
 
 
@@ -76,7 +76,7 @@ def val_accuracy_limit(y_preds, vallabel, limit):
     print("rewards", myput, rewards, (rewards - myput), (rewards/myput))
 
 
-def pred_limit(y_preds, limit):
+def pred_limit(y_preds, limit, ptype):
     i = 0
     result = []
     for x in y_preds:
@@ -87,7 +87,7 @@ def pred_limit(y_preds, limit):
         else:
             result.append('X')
 
-    filename = "result" + time.strftime("%Y-%m-%d", time.localtime())
+    filename = "result" + ptype + time.strftime("%Y-%m-%d", time.localtime())
     dt = pd.DataFrame(result)
     dt.to_excel(root + filename + ".xlsx", encoding='utf_8_sig')
 
@@ -177,7 +177,7 @@ def train():
     print("开始训练")
     gbm = lgb.train(params,  # 参数字典
                     lgb_train,  # 训练集
-                    num_boost_round=5000,  # 迭代次数
+                    num_boost_round=4000,  # 迭代次数
                     # valid_sets=lgb_val,  # 验证集
                     valid_sets=lgb_train,
                     #early_stopping_rounds=60  # 早停系数
@@ -193,34 +193,54 @@ def train():
 
     acc = get_accuracy(train_preds, trainlabel)
 
-    test_data = pd.read_table(root + 'predict_0531_not_5league.txt')
+    get_accuracy_limit(train_predt, trainlabel, 0.7)
+
+    test_data2 = pd.read_table(root + 'test202005.txt')
+    testlabel2 = np.array(test_data2.label)
+    test_data2 = np.array(test_data2.drop("label", axis=1))
+    y_predt = gbm.predict(test_data2, num_iteration=gbm.best_iteration)
+    get_accuracy_limit(y_predt, testlabel2, 0.7)
+
+    test_data = pd.read_table(root + 'test202006.txt')
     testlabel = np.array(test_data.label)
     testdata = np.array(test_data.drop("label", axis=1))
     y_predt = gbm.predict(testdata, num_iteration=gbm.best_iteration)
     y_preds = [list(x).index(max(x)) for x in y_predt]  # 3 value
+    # get_accuracy(y_preds, testlabel)
+    get_accuracy_limit(y_predt, testlabel, 0.7)
 
-    get_accuracy(y_preds, testlabel)
+    test_data1 = pd.read_table(root + 'test202007.txt')
+    testlabel1 = np.array(test_data1.label)
+    test_data1 = np.array(test_data1.drop("label", axis=1))
+    y_predt1 = gbm.predict(test_data1, num_iteration=gbm.best_iteration)
+    y_preds1 = [list(x).index(max(x)) for x in y_predt1]  # 3 value
+    # get_accuracy(y_preds1s, testlabel1)
+    get_accuracy_limit(y_predt1, testlabel1, 0.7)
 
-    gbm.save_model(root+'model_gbdt_no5league5000'+str(acc)+'.txt')
+    gbm.save_model(root+'model_gbdt_74000_'+str(acc)+'.txt')
 
 
 def predict():
-    model_file = root + 'usemodel\\model_gbdt_0.947.txt'  # model_goss_0.889
+    model_file = root + 'usemodel\\model_dart_62000_0.926.txt'  # model_goss_0.889
     gbm = lgb.Booster(model_file=model_file)
-
     print('开始预测...')
-
-    predict_data = pd.read_table(root + 'predict0624.txt')  # predict0619
+    predict_data = pd.read_table(root + 'predict2020-08-07.txt')  # predict0619
     predictdata = np.array(predict_data)
     y_predt = gbm.predict(predictdata, num_iteration=gbm.best_iteration)
-    # print(y_predt)
-    # y_preds = [ 1 if i >=0.5 else 0 for i in y_predt]  # 2 value
     # y_preds = [list(x).index(max(x)) for x in y_predt]  # 3 value
-    pred_limit(y_predt, 0.75)
-    # print(y_preds)
+    pred_limit(y_predt, 0.6, 'spf')
 
-    # dt = pd.DataFrame(y_preds)
-    # dt.to_csv(root + "result10624.csv", encoding='utf_8_sig')
+
+def predict_score():
+    model_file = root + 'usemodel\\model_score_gbdt_72000_1.0.txt'  # model_goss_0.889
+    gbm = lgb.Booster(model_file=model_file)
+    print('开始预测...')
+    predict_data = pd.read_table(root + 'predict2020-08-07.txt')  # predict0619
+    predictdata = np.array(predict_data)
+    y_predt = gbm.predict(predictdata, num_iteration=gbm.best_iteration)
+    # y_preds = [list(x).index(max(x)) for x in y_predt]  # 3 value
+    pred_limit(y_predt, 0.6, 'score')
+
 
 
 def test():
@@ -229,7 +249,7 @@ def test():
     # model_dart_not_5league0.913   0.6    , model_gbdt_not_5league0.945
     # model_dart_alldata0.948     ,    model_gbdt_alldata0.946
     #  model_dart_no5league50000.944   model_gbdt_no5league50000.944
-    model_file = root + 'usemodel\\model_gbdt_not_5league0.945.txt'
+    model_file = root + 'usemodel\\model_dart_not_5league0.913.txt'
     gbm = lgb.Booster(model_file=model_file)
 
     print('开始预测...')
@@ -242,7 +262,7 @@ def test():
     y_predt = gbm.predict(testdata, num_iteration=gbm.best_iteration)
     # print(y_predt)
     # get_accuracy_limit(y_predt, testlabel, 0.45) # 0.5 74.4%,0.55 75.6%,0.6 78.9%,0.65 82.4%,0.7 85.6%,
-    val_accuracy_limit(y_predt, val_data, 0.7)
+    val_accuracy_limit(y_predt, val_data, 0.55)
     # y_preds = [list(x).index(max(x)) for x in y_predt]  # 3 value
     # get_accuracy(y_preds, testlabel)
 
@@ -290,8 +310,9 @@ def test_5model():
 
 def main():
     #train()
-    #predict()
-    test()
+    predict()
+    predict_score()
+    #test()
     # grid_search_cv()
     #test_5model()
 
